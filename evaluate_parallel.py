@@ -15,9 +15,8 @@ def parse_arguments():
     parser.add_argument('--model_path', type=str, default='pretrained/end2race.pth')
     parser.add_argument('--hidden_scale', type=int, default=4)
     parser.add_argument('--noise', type=float, default=0.0)
-    parser.add_argument('--output_dir', type=str, default='eval_results')
     parser.add_argument('--num_workers', type=int, default=6)
-    parser.add_argument('--map_name', type=str, default='Hockenheim')
+    parser.add_argument('--map_name', type=str, default='Austin')
     
     # New arguments
     parser.add_argument('--render', action='store_true', help='Enable rendering for all evaluations')
@@ -26,7 +25,7 @@ def parse_arguments():
     parser.add_argument('--opp_racelines', type=str, nargs='+', default=['raceline0', 'raceline1', 'raceline2'])
     parser.add_argument('--opp_speed_scales', type=float, nargs='+', default=[0.5, 0.6, 0.7, 0.8])
     parser.add_argument('--interval_idx', type=int, default=15)
-    parser.add_argument('--num_startpoints', type=int, default=5)
+    parser.add_argument('--num_startpoints', type=int, default=50)
     
     return parser.parse_args()
 
@@ -179,9 +178,8 @@ if __name__ == "__main__":
                 })
     
     total_segments = len(all_params)
-    
     # Create output directory
-    os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs("eval_results", exist_ok=True)
     
     print(f"Starting batch evaluation of {total_segments} segments")
     print(f"Model: {args.model_path}")

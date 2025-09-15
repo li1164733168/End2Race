@@ -30,7 +30,7 @@ def parse_arguments():
     parser.add_argument("--interval_idx", type=int, default=15)
     parser.add_argument("--ego_raceline", type=str, default="raceline1")
     parser.add_argument("--opp_raceline", type=str, default="raceline1")
-    parser.add_argument("--opp_speedscale", type=float, default=0.8)
+    parser.add_argument("--opp_speedscale", type=float, default=0.5)
     parser.add_argument("--sim_duration", type=float, default=8.0)
     parser.add_argument("--render", action='store_true')
     

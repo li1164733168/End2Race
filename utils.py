@@ -114,7 +114,7 @@ def load_positions_and_speeds_from_params(params, map_name):
     base_path = f"f1tenth_racetracks/{map_name}"
     
     # Load ego raceline with speed
-    ego_path = os.path.join(base_path, params['ego_raceline'])
+    ego_path = os.path.join(base_path, params['ego_raceline'] + '.csv')
     with open(ego_path, 'r') as f:
         lines = f.readlines()[1:]
     ego_waypoints = []
@@ -125,7 +125,7 @@ def load_positions_and_speeds_from_params(params, map_name):
     ego_waypoints = np.array(ego_waypoints)
     
     # Load opponent raceline with speed
-    opp_path = os.path.join(base_path, params['opp_raceline'])
+    opp_path = os.path.join(base_path, params['opp_raceline'] + '.csv')
     if params['opp_raceline'] != params['ego_raceline']:
         with open(opp_path, 'r') as f:
             lines = f.readlines()[1:]
