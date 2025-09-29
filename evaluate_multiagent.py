@@ -37,7 +37,7 @@ def parse_arguments():
     return parser.parse_args()
 
 def evaluate_segment(model, device, noise_level, map_name, ego_idx, interval_idx, 
-                    ego_raceline, opp_raceline, oppo_speed_scale, sim_duration, render=False):
+                    ego_raceline, opp_raceline, opp_speed_scale, sim_duration, render=False):
     """Evaluate a single segment with model against lattice planner opponent"""
     
     np.random.seed(42)
@@ -209,13 +209,13 @@ def evaluate_segment(model, device, noise_level, map_name, ego_idx, interval_idx
         
         # Opponent lattice planner
         if tracker_count == 0:
-            oppo_poses = obsDict2oppoArray(obs, 1)
-            opp_traj = opponent.plan(obs['poses_x'][1], obs['poses_y'][1], obs['poses_theta'][1], oppo_poses, obs['linear_vels_x'][1])
+            opp_poses = obsDict2oppoArray(obs, 1)
+            opp_traj = opponent.plan(obs['poses_x'][1], obs['poses_y'][1], obs['poses_theta'][1], opp_poses, obs['linear_vels_x'][1])
         
         opp_steer, opp_speed = opponent.tracker.plan(obs['poses_x'][1], obs['poses_y'][1], obs['poses_theta'][1], obs['linear_vels_x'][1], opp_traj)
         
         opp_steer = np.clip(opp_steer, -0.52, 0.52)
-        opp_speed *= oppo_speed_scale
+        opp_speed *= opp_speed_scale
         
         # Update render info and trajectory tracking
         if render:
@@ -281,7 +281,7 @@ def evaluate_segment(model, device, noise_level, map_name, ego_idx, interval_idx
         else:
             state_prefix = "o" if final_state == "overtaking" else "f"
         opp_raceline_num = opp_raceline.replace('raceline', '')
-        video_filename = f"{state_prefix}_ol{opp_raceline_num}_e{ego_idx}_o{opp_idx}_s{oppo_speed_scale}.mp4"
+        video_filename = f"{state_prefix}_ol{opp_raceline_num}_e{ego_idx}_o{opp_idx}_s{opp_speed_scale}.mp4"
         
         # Create the desired directory structure: eval_results/model_name+noise/
         model_name = os.path.splitext(os.path.basename(args.model_path))[0]
@@ -326,7 +326,7 @@ def evaluate_segment(model, device, noise_level, map_name, ego_idx, interval_idx
         'ego_idx': ego_idx,
         'opp_idx': opp_idx,
         'opp_raceline': opp_raceline,
-        'oppo_speed_scale': oppo_speed_scale
+        'opp_speed_scale': opp_speed_scale
     }
 
 if __name__ == "__main__":

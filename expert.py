@@ -203,7 +203,7 @@ def run_lattice_planner(args):
     # Setup planners
     ego_planner, config_directory = setup_ego_planner(args.map_name, args.raceline)
     if args.num_agents == 2:
-        opp_planner = setup_opp_planner(args.map_name, args.oppo_raceline)
+        opp_planner = setup_opp_planner(args.map_name, args.opp_raceline)
     else:
         opp_planner = None
     
@@ -292,11 +292,11 @@ def run_lattice_planner(args):
             opp_best_traj = None
         else:
             # Multi-agent planning
-            oppo_pose = obsDict2oppoArray(obs, 0)
-            ego_best_traj = ego_planner.plan(obs['poses_x'][0], obs['poses_y'][0], obs['poses_theta'][0], oppo_pose, obs['linear_vels_x'][0])
+            opp_pose = obsDict2oppoArray(obs, 0)
+            ego_best_traj = ego_planner.plan(obs['poses_x'][0], obs['poses_y'][0], obs['poses_theta'][0], opp_pose, obs['linear_vels_x'][0])
             
-            oppo_pose = obsDict2oppoArray(obs, 1)
-            opp_best_traj = opp_planner.plan(obs['poses_x'][1], obs['poses_y'][1], obs['poses_theta'][1], oppo_pose, obs['linear_vels_x'][1])
+            opp_pose = obsDict2oppoArray(obs, 1)
+            opp_best_traj = opp_planner.plan(obs['poses_x'][1], obs['poses_y'][1], obs['poses_theta'][1], opp_pose, obs['linear_vels_x'][1])
         
         # Tracking loop
         tracker_count = 0
@@ -386,7 +386,7 @@ def run_lattice_planner(args):
     else:
         # Multi-agent filename
         state_prefix = "o" if final_state == "overtaking" else "f"
-        opp_raceline_num = args.oppo_raceline.replace('raceline', '').replace('.csv', '')
+        opp_raceline_num = args.opp_raceline.replace('raceline', '').replace('.csv', '')
         base_filename = f"{state_prefix}_ol{opp_raceline_num}_e{args.ego_idx}_o{opp_idx}_s{args.opp_speed_scale}"
     
     # Save data

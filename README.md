@@ -5,6 +5,7 @@
 
 End2Race is an end-to-end imitation learning framework for autonomous racing on the [F1Tenth platform](https://roboracer.ai/build). By learning from expert demonstrations generated through a Lattice Planner, the system captures temporal dependencies in racing dynamics to enable real-time control in competitive scenarios. End2Race addresses key challenges in autonomous racing—strategic planning, reactive control, and safe overtaking—through a unified neural network approach, demonstrating superior performance in both single-agent lap completion and multi-agent racing with high overtaking success rates and minimal collisions.
 
+![Demo Video](media/ICRA26_1686_VI_i.mp4)
 
 ## Table of Contents
 - [Code Structure](#code-structure)
@@ -30,10 +31,10 @@ end2race/
 ├── model.py                   # GRU network architecture
 ├── train.py                   # Training script
 ├── expert.py                  # Lattice planner expert simulation
-├── collect_dataset.py         # Batch data collection
+├── collect.sh       # Batch data collection
 ├── evaluate_singleagent.py    # Single-agent lap completion evaluation
 ├── evaluate_multiagent.py     # Multi-agent competitive racing evaluation
-├── evaluate_parallel.py       # Parallel batch evaluation
+├── evaluate.sh       # Parallel batch evaluation
 └── utils.py                   # Shared utility functions
 ```
 
@@ -108,21 +109,8 @@ python evaluate_multiagent.py \
 The batch evaluation runs hundreds of scenarios in parallel to comprehensively assess the model's performance across different starting positions, opponent strategies, and difficulty levels:
 
 ```bash
-python evaluate_parallel.py \
-    --model_path pretrained/end2race.pth \
-    --map_name Austin \
-    --num_workers 4 \
-    --num_startpoints 50 \
-    --oppo_racelines raceline0 raceline1 raceline2 \
-    --oppo_speed_scales 0.5 0.6 0.7 0.8 \
-    --sim_duration 8.0 \
-    --noise 0.0 \
-    --render
+bash evaluate.sh
 ```
-- `--num_workers`: Parallel processes for batch evaluation 
-- `--num_startpoints`: Number of starting positions distributed along track
-- `--oppo_racelines`: List of opponent racing lines
-- `--oppo_speed_scales`: List of speed multipliers 
 
 
 ## Data Collection
@@ -165,19 +153,8 @@ python expert.py \
 The batch collection script automates the process by running multiple Lattice Planner simulations in parallel, systematically varying starting positions, opponent strategies, and speed settings to create a diverse training dataset:
 
 ```bash
-python collect_dataset.py \
-    --map_name Austin \
-    --num_startpoints 50 \
-    --opp_racelines raceline0 raceline1 raceline2 \
-    --opp_speed_scales 0.5 0.6 0.7 0.8 \
-    --sim_duration 8.0 \
-    --workers 6 
+bash collect.sh
 ```
-- `--num_startpoints`: Number of starting positions distributed along track 
-- `--opp_racelines`: List of opponent racing lines 
-- `--opp_speed_scales`: List of speed multipliers 
-- `--workers`: Number of parallel processes 
-
 
 ## Training
 Trains the End2Race model using imitation learning on collected demonstrations.
