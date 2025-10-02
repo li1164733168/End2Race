@@ -31,10 +31,10 @@ end2race/
 ├── model.py                   # GRU network architecture
 ├── train.py                   # Training script
 ├── expert.py                  # Lattice planner expert simulation
-├── collect.sh       # Batch data collection
+├── collect.sh                 # Batch data collection
 ├── evaluate_singleagent.py    # Single-agent lap completion evaluation
 ├── evaluate_multiagent.py     # Multi-agent competitive racing evaluation
-├── evaluate.sh       # Parallel batch evaluation
+├── evaluate.sh                # Parallel batch evaluation
 └── utils.py                   # Shared utility functions
 ```
 
@@ -115,24 +115,10 @@ bash evaluate.sh
 
 ## Data Collection
 
-### Single Collection
-
-The single-agent scenario collects lap completion demonstrations where the Lattice Planner navigates the track without opponents:
+Collects competitive racing demonstrations in multi-agent scenarios where the ego Lattice Planner interacts with an opponent, learning both overtaking and following behaviors:
 
 ```bash
 python expert.py \
-    --num_agents 1 \
-    --map_name Austin \
-    --ego_idx 0 \
-    --sim_duration 8.0 \
-    --render
-```
-
-The multi-agent scenario collects competitive racing demonstrations where the ego Lattice Planner must overtake or follow an opponent:
-
-```bash
-python expert.py \
-    --num_agents 2 \
     --map_name Austin \
     --ego_idx 0 \
     --interval_idx 15 \
@@ -141,7 +127,6 @@ python expert.py \
     --sim_duration 8.0 \
     --render
 ```
-- `--num_agents`: 1 for single-agent racing, 2 for multi-agent racing
 - `--ego_idx`: Starting waypoint index for ego vehicle 
 - `--interval_idx`: Initial distance between vehicles in waypoints
 - `--opp_raceline`: Opponent's raceline file 

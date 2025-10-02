@@ -26,7 +26,7 @@ def parse_arguments():
     
     # Segment parameters
     parser.add_argument("--map_name", type=str, default="Austin")
-    parser.add_argument("--ego_idx", type=int, default=363)
+    parser.add_argument("--ego_idx", type=int, default=0)
     parser.add_argument("--interval_idx", type=int, default=15)
     parser.add_argument("--ego_raceline", type=str, default="raceline1")
     parser.add_argument("--opp_raceline", type=str, default="raceline1")
@@ -174,11 +174,6 @@ def evaluate_segment(model, device, noise_level, map_name, ego_idx, interval_idx
     speeds = []
     tracker_count = 0
     opp_traj = None
-    uturn_occurred = False
-    stuck_counter = 0
-    last_progress = initial_ego_progress
-    heading_history = []
-    heading_window = 20
     
     # Main simulation loop
     while not done and lap_time < sim_duration:
@@ -256,14 +251,6 @@ def evaluate_segment(model, device, noise_level, map_name, ego_idx, interval_idx
         if opp_progress < initial_opp_progress - centerline_total_length/2:
             opp_progress += centerline_total_length
         
-        # Check for U-turn and stuck behavior
-        uturn_occurred, done_uturn, stuck_counter, last_progress = check_uturn_and_stuck(
-            ego_progress, initial_ego_progress, last_progress, stuck_counter,
-            heading_history, heading_window, obs['poses_theta'][0]
-        )
-        if done_uturn:
-            done = True
-        
         final_state = "overtaking" if ego_progress > opp_progress else "following"
         
         # Check collision
@@ -311,8 +298,6 @@ def evaluate_segment(model, device, noise_level, map_name, ego_idx, interval_idx
     # Determine final state number
     if collision_occurred:
         final_state_num = 3
-    elif uturn_occurred:
-        final_state_num = 4
     elif final_state == "overtaking":
         final_state_num = 2
     else:

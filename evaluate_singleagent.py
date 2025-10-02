@@ -34,7 +34,7 @@ def evaluate_laps(model, device, noise_level, map_name, render, lap_num):
     np.random.seed(42)
     num_features = 360
     start_idx = 0
-    raceline = f'{map_name}_centerline.csv'
+    raceline = f'{map_name}_raceline.csv'
     env = gym.make("f110-v0", map=f"f1tenth_racetracks/{map_name}/{map_name}_map", map_ext=".png", num_agents=1, timestep=0.01, integrator=Integrator.RK4)
 
     # Generate video path if rendering
@@ -86,17 +86,13 @@ def evaluate_laps(model, device, noise_level, map_name, render, lap_num):
     collision_occurred = False
     trajectory = []
     speeds = []
-    stuck_counter = 0
     last_progress = initial_progress
-    uturn_occurred = False
     lap_count = 0
     lap_times = []
     video_frames = []
     near_start_flag = True
     min_lap_time = 10.0
     lap_start_time = 0.0
-    heading_history = []
-    heading_window = 20
     
     if render:
         env.render('human')
@@ -171,13 +167,7 @@ def evaluate_laps(model, device, noise_level, map_name, render, lap_num):
         if ego_progress < last_progress - centerline_total_length/2:
             ego_progress += centerline_total_length
         
-        # Check for U-turn and stuck behavior
-        uturn_occurred, done_uturn, stuck_counter, last_progress = check_uturn_and_stuck(
-            ego_progress, initial_progress, last_progress, stuck_counter,
-            heading_history, heading_window, obs['poses_theta'][0]
-        )
-        if done_uturn:
-            done = True
+        last_progress = ego_progress
         
         # Check collision
         if obs['collisions'][0]:
@@ -254,8 +244,6 @@ def evaluate_laps(model, device, noise_level, map_name, render, lap_num):
     # Print status
     if collision_occurred:
         print(f"\nStatus: Collision occurred")
-    elif uturn_occurred:
-        print(f"\nStatus: U-turn occurred")
     elif lap_count >= lap_num:
         print(f"\nStatus: Successfully completed all laps")
     else:

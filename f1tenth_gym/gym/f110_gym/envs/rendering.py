@@ -302,7 +302,6 @@ class EnvRenderer(pyglet.window.Window):
 
         # Draw all batches
         self.batch.draw()
-        self.fps_display.draw()
         # Remove default modelview matrix
         glPopMatrix()
 

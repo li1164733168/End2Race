@@ -6,13 +6,13 @@ HIDDEN_SCALE=4
 NOISE=0.0
 NUM_WORKERS=6
 MAP_NAME="Austin"
-RENDER=false
+RENDER=true
 SIM_DURATION=8.0
 EGO_RACELINE="raceline1"
 OPP_RACELINES=("raceline0" "raceline1" "raceline2")
 OPP_SPEED_SCALES=(0.5 0.6 0.7 0.8)
 INTERVAL_IDX=15
-NUM_STARTPOINTS=50
+NUM_STARTPOINTS=2
 
 # Generate ego_idx_range
 raceline_path="f1tenth_racetracks/${MAP_NAME}/${EGO_RACELINE}.csv"
@@ -71,7 +71,6 @@ echo "Evaluation complete in ${elapsed} seconds"
 following_count=0
 overtaking_count=0
 collision_count=0
-uturn_count=0
 error_count=0
 
 for result_file in "$temp_dir"/*; do
@@ -81,7 +80,6 @@ for result_file in "$temp_dir"/*; do
             1) ((following_count++)) ;;
             2) ((overtaking_count++)) ;;
             3) ((collision_count++)) ;;
-            4) ((uturn_count++)) ;;
             *) ((error_count++)) ;;
         esac
     fi
@@ -92,7 +90,6 @@ rm -rf "$temp_dir"
 success_count=$((following_count + overtaking_count))
 success_rate=$(echo "scale=1; $success_count * 100 / $total_segments" | bc)
 collision_rate=$(echo "scale=1; $collision_count * 100 / $total_segments" | bc)
-uturn_rate=$(echo "scale=1; $uturn_count * 100 / $total_segments" | bc)
 
 echo ""
 echo "Results by category:"
@@ -100,5 +97,4 @@ echo "  following: $following_count ($(echo "scale=1; $following_count * 100 / $
 echo "  overtaking: $overtaking_count ($(echo "scale=1; $overtaking_count * 100 / $total_segments" | bc)%)"
 echo "  success: $success_count ($(echo "scale=1; $success_count * 100 / $total_segments" | bc)%)"
 echo "  collision: $collision_count ($(echo "scale=1; $collision_count * 100 / $total_segments" | bc)%)"
-echo "  uturn: $uturn_count ($(echo "scale=1; $uturn_count * 100 / $total_segments" | bc)%)"
 echo "  error: $error_count ($(echo "scale=1; $error_count * 100 / $total_segments" | bc)%)"

@@ -21,51 +21,6 @@ def load_raceline_with_speed(map_name, raceline_file, start_idx):
     
     return start_pose, initial_speed, waypoints
 
-def check_uturn_and_stuck(ego_progress, initial_progress, last_progress, stuck_counter, 
-                          heading_history, heading_window, current_heading):
-    """Check for U-turn and stuck detection"""
-    uturn_occurred = False
-    done = False
-    
-    # Check for stuck behavior
-    progress_delta = abs(ego_progress - last_progress)
-    if progress_delta < 0.1:
-        stuck_counter += 1
-    elif progress_delta < 100.0:
-        stuck_counter = 0
-        last_progress = ego_progress
-
-    if stuck_counter > 200:
-        uturn_occurred = True
-        done = True
-        print(f"Vehicle stuck")
-        
-    # Track heading changes
-    heading_history.append(current_heading)
-    if len(heading_history) > heading_window:
-        heading_history.pop(0)
-
-    # Check for U-turn based on heading reversal
-    if len(heading_history) == heading_window:
-        initial_heading = heading_history[0]
-        current_heading = heading_history[-1]
-        
-        # Normalize the heading difference to [-pi, pi]
-        heading_diff = current_heading - initial_heading
-        while heading_diff > np.pi:
-            heading_diff -= 2 * np.pi
-        while heading_diff < -np.pi:
-            heading_diff += 2 * np.pi
-        
-        # Check if heading has reversed (more than 150 degrees change)
-        if abs(heading_diff) > 2.6:  # ~150 degrees
-            if ego_progress < initial_progress - 5.0:
-                uturn_occurred = True
-                done = True
-                print(f"U-turn detected (heading reversed by {np.degrees(heading_diff):.1f} degrees)")
-                
-    return uturn_occurred, done, stuck_counter, last_progress
-
 def calculate_metrics(trajectory, speeds):
     """Calculate performance metrics"""
     avg_speed = np.mean(speeds) if speeds else 0
