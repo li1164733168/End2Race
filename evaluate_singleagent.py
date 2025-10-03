@@ -59,7 +59,7 @@ def evaluate_laps(model, device, noise_level, map_name, render, lap_num):
     batch_objects = []
     
     if render:
-        render_callback = create_render_callback(render_info, visited_points, drawn_points, batch_objects, lap_num)
+        render_callback = create_single_agent_render_callback(render_info, visited_points, drawn_points, batch_objects, lap_num)
         env.add_render_callback(render_callback)
     
     # Load starting position and initial speed

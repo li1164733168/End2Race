@@ -9,6 +9,7 @@ from datetime import datetime
 import imageio
 from latticeplanner.lattice_planner import *
 from latticeplanner.utils import *
+from utils import create_planner_render_callback
 
 render_info = {"ego_steer": 0.0, "ego_speed": 0.0, "opp_steer": 0.0, "opp_speed": 0.0}
 draw_grid_pts = []
@@ -34,46 +35,11 @@ def parse_arguments():
 
 def create_render_callback():
     """Create a render callback function for multi-agent mode"""
-    from pyglet.gl import GL_POINTS
 
-    def render_callback(e):
-        global ego_planner, draw_grid_pts, draw_traj_pts, render_info
-        # Camera following - center on ego vehicle
-        x, y = e.cars[0].vertices[::2], e.cars[0].vertices[1::2]
-        ego_x, ego_y = sum(x)/len(x), sum(y)/len(y)
+    def get_ego_planner():
+        return ego_planner
 
-        e.left, e.right, e.top, e.bottom = ego_x - 800, ego_x + 800, ego_y + 800, ego_y - 800
-        e.score_label.x, e.score_label.y = e.left + 800, e.bottom + 100
-
-        # Display information for both agents
-        e.score_label.text = (f"Ego: {render_info['ego_speed']:.1f}m/s, {render_info['ego_steer']:.2f}rad | "
-                              f"Opp: {render_info['opp_speed']:.1f}m/s, {render_info['opp_steer']:.2f}rad")
-        
-        # Grid and trajectory rendering
-        if ego_planner and ego_planner.goal_grid is not None:
-            goal_grid_pts = np.vstack([ego_planner.goal_grid[:, 0], ego_planner.goal_grid[:, 1]]).T
-            scaled_grid_pts = 50. * goal_grid_pts
-            for i in range(scaled_grid_pts.shape[0]):
-                if len(draw_grid_pts) < scaled_grid_pts.shape[0]:
-                    b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_grid_pts[i, 0], scaled_grid_pts[i, 1], 0.]), ('c3B/stream', [183, 193, 222]))
-                    draw_grid_pts.append(b)
-                else:
-                    draw_grid_pts[i].vertices = [scaled_grid_pts[i, 0], scaled_grid_pts[i, 1], 0.]
-            
-            best_traj_pts = np.vstack([ego_planner.best_traj[:, 0], ego_planner.best_traj[:, 1]]).T
-            scaled_btraj_pts = 50. * best_traj_pts
-            for i in range(scaled_btraj_pts.shape[0]):
-                if len(draw_traj_pts) < scaled_btraj_pts.shape[0]:
-                    b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_btraj_pts[i, 0], scaled_btraj_pts[i, 1], 0.]), ('c3B/stream', [183, 193, 222]))
-                    draw_traj_pts.append(b)
-                else:
-                    draw_traj_pts[i].vertices = [scaled_btraj_pts[i, 0], scaled_btraj_pts[i, 1], 0.]
-        
-        if ego_planner:
-            ego_planner.tracker.render_waypoints(e)
-    
-    render_callback.render_info = render_info
-    return render_callback
+    return create_planner_render_callback(render_info, get_ego_planner, draw_grid_pts, draw_traj_pts, margin=800.0)
 
 def setup_ego_planner(map_name, raceline_file, config_path='latticeplanner/lattice_config.yaml'):
     """

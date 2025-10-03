@@ -92,43 +92,14 @@ def evaluate_segment(model, device, noise_level, map_name, ego_idx, interval_idx
         visited_points = [[], []]  # [ego_points, opp_points]
         drawn_points = [[], []]    # [ego_drawn, opp_drawn]
         batch_objects = []
-        
-        def render_callback(e):
-            from pyglet.gl import GL_POINTS
-            
-            # Camera following - center on ego vehicle
-            x = e.cars[0].vertices[::2]
-            y = e.cars[0].vertices[1::2]
-            ego_x, ego_y = sum(x)/len(x), sum(y)/len(y)
-            
-            e.left = ego_x - 800
-            e.right = ego_x + 800
-            e.top = ego_y + 800
-            e.bottom = ego_y - 800
-            
-            e.score_label.x = e.left + 800
-            e.score_label.y = e.bottom + 100
-            
-            # Update score label
-            e.score_label.text = (f"State: {render_info['state']} | "
-                                f"Ego: {render_info['ego_speed']:.1f}m/s, {render_info['ego_steer']:.2f}rad | "
-                                f"Opp: {render_info['opp_speed']:.1f}m/s, {render_info['opp_steer']:.2f}rad")
-            
-            # Draw trajectories for both vehicles
-            colors = [(0, 0, 255), (255, 0, 0)]  # [ego_blue, opp_red]
-            for vehicle_idx in range(2):
-                color = colors[vehicle_idx]
-                for i, pt in enumerate(visited_points[vehicle_idx]):
-                    x, y = 50.0 * pt[0], 50.0 * pt[1]
-                    if i < len(drawn_points[vehicle_idx]):
-                        drawn_points[vehicle_idx][i].vertices = [x, y, 0.0]
-                    else:
-                        b = e.batch.add(1, GL_POINTS, None,
-                                      ('v3f/stream', [x, y, 0.0]),
-                                      ('c3B/stream', color))
-                        drawn_points[vehicle_idx].append(b)
-                        batch_objects.append(b)
-        
+
+        render_callback = create_multiagent_render_callback(
+            render_info,
+            visited_points,
+            drawn_points,
+            batch_objects
+        )
+
         env.add_render_callback(render_callback)
     else:
         render_info = None

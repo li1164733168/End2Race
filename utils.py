@@ -29,33 +29,120 @@ def calculate_metrics(trajectory, speeds):
                         for i in range(len(trajectory)-1)) if len(trajectory) > 1 else 0
     return avg_speed, speed_variance, total_distance
 
-def create_render_callback(render_info, visited_points, drawn_points, batch_objects, lap_num):
-    """Create render callback function for visualization"""
+def follow_vehicle_camera(event, car_index=0, margin=800.0):
+    """Center the camera on the specified vehicle and apply symmetric margins."""
+    x_vertices = event.cars[car_index].vertices[::2]
+    y_vertices = event.cars[car_index].vertices[1::2]
+    center_x = float(np.mean(x_vertices))
+    center_y = float(np.mean(y_vertices))
+    event.left, event.right = center_x - margin, center_x + margin
+    event.top, event.bottom = center_y + margin, center_y - margin
+    return center_x, center_y
+
+def set_score_label(event, x_offset, y_offset, vertical_anchor='bottom'):
+    """Position the score label relative to the viewport bounds."""
+    event.score_label.x = event.left + x_offset
+    if vertical_anchor == 'top':
+        event.score_label.y = event.top + y_offset
+    else:
+        event.score_label.y = event.bottom + y_offset
+
+def update_point_batches(event, batches, points, color, batch_objects=None, scale=50.0):
+    """Populate or update pyglet point batches with the provided 2D points."""
     from pyglet.gl import GL_POINTS
-    
-    def render_callback(e):
-        x, y = e.cars[0].vertices[::2], e.cars[0].vertices[1::2]
-        e.left, e.right = min(x) - 800, max(x) + 800
-        e.top, e.bottom = max(y) + 800, min(y) - 800
-        e.score_label.x, e.score_label.y = e.left + 800, e.top - 1500
-        
-        e.score_label.text = (f"Laps: {render_info['laps']}/{lap_num} | "
-                            f"Time: {render_info['lap_time']:.1f}s | "
-                            f"Speed: {render_info['speed']:.1f}m/s | "
-                            f"Steer: {render_info['steer']:.2f}rad")
-        
-        # Draw trajectory
-        for i, pt in enumerate(visited_points):
-            x, y = 50.0 * pt[0], 50.0 * pt[1]
-            if i < len(drawn_points):
-                drawn_points[i].vertices = [x, y, 0.0]
-            else:
-                b = e.batch.add(1, GL_POINTS, None,
-                              ('v3f/stream', [x, y, 0.0]),
-                              ('c3B/stream', [0, 0, 255]))
-                drawn_points.append(b)
-                batch_objects.append(b)
-    
+
+    color_stream = list(color)
+    for idx, point in enumerate(points):
+        x_coord, y_coord = float(point[0]) * scale, float(point[1]) * scale
+        if idx < len(batches):
+            batches[idx].vertices = [x_coord, y_coord, 0.0]
+        else:
+            batch_item = event.batch.add(
+                1,
+                GL_POINTS,
+                None,
+                ('v3f/stream', [x_coord, y_coord, 0.0]),
+                ('c3B/stream', color_stream)
+            )
+            batches.append(batch_item)
+            if batch_objects is not None:
+                batch_objects.append(batch_item)
+
+def create_multiagent_render_callback(render_info, visited_points, drawn_points, batch_objects, colors=None, margin=800.0):
+    """Create a render callback that visualizes two vehicles and their trajectories."""
+    if colors is None:
+        colors = [(0, 0, 255), (255, 0, 0)]
+
+    def render_callback(event):
+        follow_vehicle_camera(event, margin=margin)
+        set_score_label(event, 800, 100, vertical_anchor='bottom')
+
+        event.score_label.text = (
+            f"State: {render_info['state']} | "
+            f"Ego: {render_info['ego_speed']:.1f}m/s, {render_info['ego_steer']:.2f}rad | "
+            f"Opp: {render_info['opp_speed']:.1f}m/s, {render_info['opp_steer']:.2f}rad"
+        )
+
+        for vehicle_idx, color in enumerate(colors):
+            if vehicle_idx < len(drawn_points) and vehicle_idx < len(visited_points):
+                update_point_batches(
+                    event,
+                    drawn_points[vehicle_idx],
+                    visited_points[vehicle_idx],
+                    color,
+                    batch_objects=batch_objects,
+                    scale=50.0
+                )
+
+    return render_callback
+
+def create_planner_render_callback(render_info, planner_getter, draw_grid_pts, draw_traj_pts, margin=800.0):
+
+    def render_callback(event):
+        planner = planner_getter()
+
+        follow_vehicle_camera(event, margin=margin)
+        set_score_label(event, 800, 100, vertical_anchor='bottom')
+
+        event.score_label.text = (
+            f"Ego: {render_info['ego_speed']:.1f}m/s, {render_info['ego_steer']:.2f}rad | "
+            f"Opp: {render_info['opp_speed']:.1f}m/s, {render_info['opp_steer']:.2f}rad"
+        )
+
+        if planner and planner.goal_grid is not None:
+            goal_grid_pts = np.column_stack((planner.goal_grid[:, 0], planner.goal_grid[:, 1]))
+            update_point_batches(event, draw_grid_pts, goal_grid_pts, color=(183, 193, 222), scale=50.0)
+
+            if planner.best_traj is not None:
+                best_traj_pts = np.column_stack((planner.best_traj[:, 0], planner.best_traj[:, 1]))
+                update_point_batches(event, draw_traj_pts, best_traj_pts, color=(183, 193, 222), scale=50.0)
+
+        if planner:
+            planner.tracker.render_waypoints(event)
+
+    render_callback.render_info = render_info
+    return render_callback
+
+def create_single_agent_render_callback(render_info, visited_points, drawn_points, batch_objects, lap_num):
+
+    def render_callback(event):
+        x_vertices = event.cars[0].vertices[::2]
+        y_vertices = event.cars[0].vertices[1::2]
+        event.left = float(np.min(x_vertices)) - 800
+        event.right = float(np.max(x_vertices)) + 800
+        event.top = float(np.max(y_vertices)) + 800
+        event.bottom = float(np.min(y_vertices)) - 800
+        set_score_label(event, 800, -1500, vertical_anchor='top')
+
+        event.score_label.text = (
+            f"Laps: {render_info['laps']}/{lap_num} | "
+            f"Time: {render_info['lap_time']:.1f}s | "
+            f"Speed: {render_info['speed']:.1f}m/s | "
+            f"Steer: {render_info['steer']:.2f}rad"
+        )
+
+        update_point_batches(event, drawn_points, visited_points, color=(0, 0, 255), batch_objects=batch_objects)
+
     return render_callback
 
 def find_corresponding_waypoint(ego_waypoint, opp_waypoints):
