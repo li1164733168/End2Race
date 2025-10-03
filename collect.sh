@@ -4,14 +4,14 @@
 WORKERS=12
 RENDER=false
 MAP_NAME="Austin"
-EGO_RACELINES=("raceline1")
+EGO_RACELINE="raceline1"
 OPP_RACELINES=("raceline0" "raceline1" "raceline2")
 OPP_SPEED_SCALES=(0.5 0.6 0.7 0.8)
-INTERVAL_IDXS=(15)
+INTERVAL_IDX=15
 SIM_DURATION=8.0
 NUM_STARTPOINTS=50
 # Generate ego_idx_range
-raceline_path="f1tenth_racetracks/${MAP_NAME}/${EGO_RACELINES[0]}.csv"
+raceline_path="f1tenth_racetracks/${MAP_NAME}/${EGO_RACELINE}.csv"
 max_waypoints=$(tail -n +3 "$raceline_path" | wc -l)
 ego_idx_range=()
 for ((i=0; i<NUM_STARTPOINTS; i++)); do
@@ -20,41 +20,39 @@ for ((i=0; i<NUM_STARTPOINTS; i++)); do
 done
 
 # Calculate total jobs
-total_jobs=$((${#EGO_RACELINES[@]} * ${#OPP_RACELINES[@]} * ${#OPP_SPEED_SCALES[@]} * ${#INTERVAL_IDXS[@]} * ${#ego_idx_range[@]}))
+total_jobs=$((${#OPP_RACELINES[@]} * ${#OPP_SPEED_SCALES[@]} * ${#ego_idx_range[@]}))
 
 echo "Lattice Planner Batch Data Collection"
 echo "====================================="
 echo "Map: $MAP_NAME"
-echo "Ego racelines: ${EGO_RACELINES[*]}"
+echo "Ego raceline: ${EGO_RACELINE}"
 echo "Opponent racelines: ${OPP_RACELINES[*]}"
 echo "Speed scales: ${OPP_SPEED_SCALES[*]}"
-echo "Intervals: ${INTERVAL_IDXS[*]}"
+echo "Interval: ${INTERVAL_IDX}"
 echo "Time per run: ${SIM_DURATION}s"
 echo "Starting points: $NUM_STARTPOINTS"
 echo "Total jobs: $total_jobs"
 
 # Generate parameter combinations and run simulations
-for ego_raceline in "${EGO_RACELINES[@]}"; do
-    for opp_raceline in "${OPP_RACELINES[@]}"; do
-        for opp_speed in "${OPP_SPEED_SCALES[@]}"; do
-            for interval_idx in "${INTERVAL_IDXS[@]}"; do
-                for ego_idx in "${ego_idx_range[@]}"; do
-                    cmd="python expert.py --num_agents 2 --map_name $MAP_NAME --raceline $ego_raceline --opp_raceline $opp_raceline --opp_speed_scale $opp_speed --ego_idx $ego_idx --interval_idx $interval_idx --sim_duration $SIM_DURATION"
-                    
-                    if [ "$RENDER" = true ]; then
-                        cmd="$cmd --render"
-                    fi
-                    
-                    while [ $(jobs -r | wc -l) -ge $WORKERS ]; do
-                        sleep 0.1
-                    done
-                    
-                    eval "$cmd" >/dev/null 2>&1 &
-                done
+
+for opp_raceline in "${OPP_RACELINES[@]}"; do
+    for opp_speed in "${OPP_SPEED_SCALES[@]}"; do
+        for ego_idx in "${ego_idx_range[@]}"; do
+            cmd="python expert.py --map_name $MAP_NAME --raceline $EGO_RACELINE --opp_raceline $opp_raceline --opp_speed_scale $opp_speed --ego_idx $ego_idx --interval_idx $INTERVAL_IDX --sim_duration $SIM_DURATION"
+
+            if [ "$RENDER" = true ]; then
+                cmd="$cmd --render"
+            fi
+            
+            while [ $(jobs -r | wc -l) -ge $WORKERS ]; do
+                sleep 0.1
             done
+            
+            eval "$cmd" >/dev/null 2>&1 &
         done
     done
 done
+
 
 wait
 
