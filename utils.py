@@ -124,25 +124,39 @@ def create_planner_render_callback(render_info, planner_getter, draw_grid_pts, d
     return render_callback
 
 def create_single_agent_render_callback(render_info, visited_points, drawn_points, batch_objects, lap_num):
-
+    """Create render callback with proper trajectory visualization"""
+    from pyglet.gl import GL_POINTS
+    
     def render_callback(event):
+        # Camera following ego vehicle
         x_vertices = event.cars[0].vertices[::2]
         y_vertices = event.cars[0].vertices[1::2]
         event.left = float(np.min(x_vertices)) - 800
         event.right = float(np.max(x_vertices)) + 800
         event.top = float(np.max(y_vertices)) + 800
         event.bottom = float(np.min(y_vertices)) - 800
-        set_score_label(event, 800, -1500, vertical_anchor='top')
-
+        event.score_label.x = event.left + 800
+        event.score_label.y = event.top - 1500
+        
         event.score_label.text = (
             f"Laps: {render_info['laps']}/{lap_num} | "
             f"Time: {render_info['lap_time']:.1f}s | "
             f"Speed: {render_info['speed']:.1f}m/s | "
             f"Steer: {render_info['steer']:+.2f}rad"
         )
-
-        update_point_batches(event, drawn_points, visited_points, color=(0, 0, 255), batch_objects=batch_objects)
-
+        
+        # Draw trajectory points (this is the key part that was missing)
+        for i, pt in enumerate(visited_points):
+            x, y = 50.0 * pt[0], 50.0 * pt[1]
+            if i < len(drawn_points):
+                drawn_points[i].vertices = [x, y, 0.0]
+            else:
+                b = event.batch.add(1, GL_POINTS, None,
+                              ('v3f/stream', [x, y, 0.0]),
+                              ('c3B/stream', [255, 255, 0]))  # Yellow trajectory
+                drawn_points.append(b)
+                batch_objects.append(b)
+    
     return render_callback
 
 def find_corresponding_waypoint(ego_waypoint, opp_waypoints):
