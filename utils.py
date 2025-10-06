@@ -47,7 +47,7 @@ def set_score_label(event, x_offset, y_offset, vertical_anchor='bottom'):
     else:
         event.score_label.y = event.bottom + y_offset
 
-def update_point_batches(event, batches, points, color, batch_objects=None, scale=50.0):
+def update_point_batches(event, batches, points, color, batch_objects=None, scale=10.0):
     """Populate or update pyglet point batches with the provided 2D points."""
     from pyglet.gl import GL_POINTS
 
@@ -71,7 +71,7 @@ def update_point_batches(event, batches, points, color, batch_objects=None, scal
 def create_multiagent_render_callback(render_info, visited_points, drawn_points, batch_objects, colors=None, margin=800.0):
     """Create a render callback that visualizes two vehicles and their trajectories."""
     if colors is None:
-        colors = [(0, 0, 255), (255, 0, 0)]
+        colors = [(255, 255, 0), (255, 0, 0)]
 
     def render_callback(event):
         follow_vehicle_camera(event, margin=margin)
@@ -79,8 +79,8 @@ def create_multiagent_render_callback(render_info, visited_points, drawn_points,
 
         event.score_label.text = (
             f"State: {render_info['state']} | "
-            f"Ego: {render_info['ego_speed']:.1f}m/s, {render_info['ego_steer']:.2f}rad | "
-            f"Opp: {render_info['opp_speed']:.1f}m/s, {render_info['opp_steer']:.2f}rad"
+            f"Ego: {render_info['ego_speed']:.1f}m/s, {render_info['ego_steer']:+.2f}rad | "
+            f"Opp: {render_info['opp_speed']:.1f}m/s, {render_info['opp_steer']:+.2f}rad"
         )
 
         for vehicle_idx, color in enumerate(colors):
@@ -105,8 +105,8 @@ def create_planner_render_callback(render_info, planner_getter, draw_grid_pts, d
         set_score_label(event, 800, 100, vertical_anchor='bottom')
 
         event.score_label.text = (
-            f"Ego: {render_info['ego_speed']:.1f}m/s, {render_info['ego_steer']:.2f}rad | "
-            f"Opp: {render_info['opp_speed']:.1f}m/s, {render_info['opp_steer']:.2f}rad"
+            f"Ego: {render_info['ego_speed']:.1f}m/s, {render_info['ego_steer']:+.2f}rad | "
+            f"Opp: {render_info['opp_speed']:.1f}m/s, {render_info['opp_steer']:+.2f}rad"
         )
 
         if planner and planner.goal_grid is not None:
@@ -138,7 +138,7 @@ def create_single_agent_render_callback(render_info, visited_points, drawn_point
             f"Laps: {render_info['laps']}/{lap_num} | "
             f"Time: {render_info['lap_time']:.1f}s | "
             f"Speed: {render_info['speed']:.1f}m/s | "
-            f"Steer: {render_info['steer']:.2f}rad"
+            f"Steer: {render_info['steer']:+.2f}rad"
         )
 
         update_point_batches(event, drawn_points, visited_points, color=(0, 0, 255), batch_objects=batch_objects)

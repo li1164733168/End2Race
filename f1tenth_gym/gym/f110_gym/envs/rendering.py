@@ -69,8 +69,8 @@ class EnvRenderer(pyglet.window.Window):
         )
 
         # gl init
-        glClearColor(1.0, 1.0, 1.0, 1.0)
-        glPointSize(4.0)
+        glClearColor(9 / 255, 32 / 255, 87 / 255, 1.0)
+        glPointSize(2.5) 
 
         # initialize camera values
         self.left = -width / 2
@@ -105,7 +105,7 @@ class EnvRenderer(pyglet.window.Window):
             anchor_y="center",
             # width=0.01,
             # height=0.01,
-            color=(0, 0, 0, 255),
+            color=(255, 255, 255, 255),
             batch=self.batch,
         )
 
@@ -154,13 +154,14 @@ class EnvRenderer(pyglet.window.Window):
         map_mask = map_img == 0.0
         map_mask_flat = map_mask.flatten()
         map_points = 50.0 * map_coords[:, map_mask_flat].T
+        # glPointSize(2.0)
         for i in range(map_points.shape[0]):
             self.batch.add(
                 1,
                 GL_POINTS,
                 None,
                 ("v3f/stream", [map_points[i, 0], map_points[i, 1], map_points[i, 2]]),
-                ("c3B/stream", [0, 0, 0]),
+                ("c3B/stream", [255, 255, 255]),
             )
         self.map_points = map_points
 
@@ -335,7 +336,7 @@ class EnvRenderer(pyglet.window.Window):
                         GL_QUADS,
                         None,
                         ("v2f", vertices),
-                        ("c3B", [0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255]),
+                        ("c3B", [255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0]),
                         # [172, 97, 185, 172, 97, 185, 172, 97, 185, 172, 97, 185],
                     )
                     self.cars.append(car)
